@@ -1,13 +1,22 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-typedef enum instruction_set {
+typedef enum {
     PUSH,
     ADD,
     POP,
     SET,
     HLT
 } Instructions;
+
+typedef enum {
+    A, B, C, D, E, F, // General register
+    INSTR_PTR,        // Instruction pointer
+    STK_PTR,          // Stack pointer
+    REGISTER_SIZE
+} Registers;
+
+static int registers[REGISTER_SIZE] = {[STK_PTR] = -1};
 
 const int program[] = {
     PUSH, 5,
@@ -17,15 +26,17 @@ const int program[] = {
     HLT
 };
 
-int ip = 0; // Instruction pointer
-int sp = -1; // stack pointer
-int stack[256];
+#define STACK_SIZE 256
+int stack[STACK_SIZE];
 bool running = true;
+
+#define IP registers[INSTR_PTR]
+#define SP registers[STK_PTR]
 
 int
 fetch()
 {
-    return program[ip];
+    return program[IP];
 }
 
 void
@@ -33,24 +44,22 @@ eval(int instr)
 {
     switch (instr) {
         case ADD: {
-            int a = stack[sp--];
-            int b = stack[sp--];
+            registers[A] = stack[SP--];
+            registers[B] = stack[SP--];
 
-            int result = b + a;
-            sp++;
-            stack[sp] = result;
+            registers[C] = registers[B] + registers[A];
 
+            stack[++SP] = registers[C]; // increase stack pointer first
             break;
         }
 
         case PUSH: {
-            sp++;
-            stack[sp] = program[++ip];
+            stack[++SP] = program[++IP];
             break;
         }
 
         case POP: {
-            int val_popped = stack[sp--];
+            int val_popped = stack[SP--];
             printf("popped %d\n", val_popped);
         }
 
@@ -59,6 +68,8 @@ eval(int instr)
             break;
         }
     }
+
+    IP++; // Next instruction
 }
 
 int
@@ -66,10 +77,7 @@ main()
 {
     while (running) {
         eval(fetch());
-        ip++;
     }
 
     return 0;
 }
-
-
