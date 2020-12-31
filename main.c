@@ -7,7 +7,8 @@ typedef enum {
     SUB,
     POP,
     SET,
-    HLT
+    HLT,
+    INSTR_SIZE
 } Instructions;
 
 typedef enum {
@@ -44,55 +45,61 @@ fetch()
     return program[IP];
 }
 
-void
-eval(int instr)
+extern inline void
+add(void)
 {
-    switch (instr) {
-        case ADD: {
-            registers[A] = stack[SP--];
-            registers[B] = stack[SP--];
+    registers[A] = stack[SP--];
+    registers[B] = stack[SP--];
 
-            registers[C] = registers[B] + registers[A];
+    registers[C] = registers[B] + registers[A];
 
-            stack[++SP] = registers[C]; // increase stack pointer first
-            break;
-        }
-
-        case SUB: {
-            registers[A] = stack[SP--];
-            registers[B] = stack[SP--];
-
-            registers[C] = registers[A] - registers[B];
-
-            stack[++SP] = registers[C];
-            break;
-        }
-
-        case PUSH: {
-            stack[++SP] = program[++IP];
-            break;
-        }
-
-        case POP: {
-            int val_popped = stack[SP--];
-            printf("popped %d\n", val_popped);
-            break;
-        }
-
-        case HLT: {
-            running = false;
-            break;
-        }
-    }
-
-    IP++; // Next instruction
+    stack[++SP] = registers[C]; // increase stack pointer first
 }
+
+extern inline void
+subtraction(void)
+{
+    registers[A] = stack[SP--];
+    registers[B] = stack[SP--];
+
+    registers[C] = registers[A] - registers[B];
+
+    stack[++SP] = registers[C];
+}
+
+extern inline void
+push(void)
+{
+    stack[++SP] = program[++IP];
+}
+
+extern inline void
+pop(void)
+{
+    int val_popped = stack[SP--];
+    printf("popped %d\n", val_popped);
+}
+
+extern inline void
+halt(void)
+{
+    running = false;
+}
+
+static void (*instr_handlers[INSTR_SIZE])(void) = {
+    [ADD]  = add,
+    [SUB]  = subtraction,
+    [PUSH] = push,
+    [POP]  = pop,
+    [HLT]  = halt,
+};
 
 int
 main()
 {
     while (running) {
-        eval(fetch());
+        instr_handlers[fetch()]();
+        IP++; // Next instruction
     }
 
     return 0;
