@@ -4,6 +4,7 @@
 typedef enum {
     PUSH,
     ADD,
+    SUB,
     POP,
     SET,
     HLT
@@ -22,6 +23,10 @@ const int program[] = {
     PUSH, 5,
     PUSH, 6,
     ADD,
+    POP,
+    PUSH, 31,
+    PUSH, 100,
+    SUB,
     POP,
     HLT
 };
@@ -53,6 +58,16 @@ eval(int instr)
             break;
         }
 
+        case SUB: {
+            registers[A] = stack[SP--];
+            registers[B] = stack[SP--];
+
+            registers[C] = registers[A] - registers[B];
+
+            stack[++SP] = registers[C];
+            break;
+        }
+
         case PUSH: {
             stack[++SP] = program[++IP];
             break;
@@ -61,6 +76,7 @@ eval(int instr)
         case POP: {
             int val_popped = stack[SP--];
             printf("popped %d\n", val_popped);
+            break;
         }
 
         case HLT: {
