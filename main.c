@@ -6,6 +6,7 @@ typedef enum {
     ADD,
     SUB,
     MUL,
+    DIV,
     POP,
     SET,
     HLT,
@@ -26,13 +27,17 @@ const int program[] = {
     PUSH, 6,
     ADD,
     POP,
-    PUSH, 31,
     PUSH, 100,
+    PUSH, 31,
     SUB,
     POP,
     PUSH, 100,
     PUSH, 78,
     MUL,
+    POP,
+    PUSH, 100,
+    PUSH, 4,
+    DIV,
     POP,
     HLT
 };
@@ -67,7 +72,7 @@ subtract(void)
     registers[A] = stack[SP--];
     registers[B] = stack[SP--];
 
-    registers[C] = registers[A] - registers[B];
+    registers[C] = registers[B] - registers[A];
 
     stack[++SP] = registers[C];
 }
@@ -78,7 +83,18 @@ multiple(void)
     registers[A] = stack[SP--];
     registers[B] = stack[SP--];
 
-    registers[C] = registers[A] * registers[B];
+    registers[C] = registers[B] * registers[A];
+
+    stack[++SP] = registers[C];
+}
+
+extern inline void
+divide(void)
+{
+    registers[A] = stack[SP--];
+    registers[B] = stack[SP--];
+
+    registers[C] = registers[B] / registers[A];
 
     stack[++SP] = registers[C];
 }
@@ -106,6 +122,7 @@ static void (*instr_handlers[INSTR_SIZE])(void) = {
     [ADD]  = add,
     [SUB]  = subtract,
     [MUL]  = multiple,
+    [DIV]  = divide,
     [PUSH] = push,
     [POP]  = pop,
     [HLT]  = halt,
